@@ -1,0 +1,31 @@
+# 로봇 입주 리허설 — Render Blueprint
+# 1) rr-site : 웹페이지(정적 사이트, 무료, 잠들지 않음)
+# 2) rr-api  : AI 서버(파이썬, 무료 플랜은 15분 무요청 시 잠들고 깨는 데 약 1분)
+services:
+  - type: web
+    name: rr-site
+    runtime: static
+    buildCommand: echo "window.RR_AI_BASE = '${AI_BASE}';" > site/config.js
+    staticPublishPath: ./site
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+
+  - type: web
+    name: rr-api
+    runtime: python
+    plan: free
+    rootDir: api
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: MODEL
+        value: claude-haiku-5-5
+      - key: DAILY_LIMIT
+        value: "500"
+      - key: PER_IP_PER_DAY
+        value: "60"
